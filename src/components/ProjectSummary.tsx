@@ -249,7 +249,7 @@ const ProjectSummary = ({ open, onClose, projectData, rooms }: ProjectSummaryPro
                             <div className="flex-1">
                               <div className="flex items-center space-x-2">
                                 <span className="font-medium text-slate-900">{appliance.name}</span>
-                                <Badge variant="outline" size="sm" className={`text-xs ${getCategoryColor(appliance.category)}`}>
+                                <Badge variant="outline" className={`text-xs ${getCategoryColor(appliance.category)}`}>
                                   {appliance.category}
                                 </Badge>
                               </div>
