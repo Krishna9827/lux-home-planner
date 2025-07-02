@@ -1,4 +1,3 @@
-
 import {
   Dialog,
   DialogContent,
@@ -10,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Building2, Calendar, User, Lightbulb, Fan, Thermometer, Settings, Download, Share } from 'lucide-react';
+import { generatePDF } from '@/utils/pdfExport';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProjectData {
   projectName: string;
@@ -44,6 +45,8 @@ interface ProjectSummaryProps {
 }
 
 const ProjectSummary = ({ open, onClose, projectData, rooms }: ProjectSummaryProps) => {
+  const { toast } = useToast();
+
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case 'Lights':
@@ -96,12 +99,35 @@ const ProjectSummary = ({ open, onClose, projectData, rooms }: ProjectSummaryPro
   const totalWattage = Object.values(totalsByCategory).reduce((sum, cat) => sum + cat.totalWattage, 0);
 
   const handlePrint = () => {
-    window.print();
+    generatePDF(projectData, rooms);
+    toast({
+      title: "Export Started",
+      description: "Your project summary is being prepared for download."
+    });
   };
 
   const handleExport = () => {
-    // This would generate a PDF or detailed export
-    console.log('Export functionality would be implemented here');
+    // Save project to history
+    const projectHistory = JSON.parse(localStorage.getItem('projectHistory') || '[]');
+    const projectId = Date.now().toString();
+    const newProject = {
+      id: projectId,
+      ...projectData,
+      rooms,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    const updatedHistory = [newProject, ...projectHistory];
+    localStorage.setItem('projectHistory', JSON.stringify(updatedHistory));
+    
+    // Generate PDF
+    generatePDF(projectData, rooms);
+    
+    toast({
+      title: "Project Saved & Exported",
+      description: "Project saved to history and PDF generated successfully."
+    });
   };
 
   return (

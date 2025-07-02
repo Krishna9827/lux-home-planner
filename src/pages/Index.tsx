@@ -1,16 +1,15 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Building2, Lightbulb, Settings, FileText } from 'lucide-react';
+import { Building2, Users, Lightbulb, ChevronRight, Settings, History } from 'lucide-react';
 
 const Index = () => {
   const navigate = useNavigate();
-  const [projectData, setProjectData] = useState({
+  const [formData, setFormData] = useState({
     projectName: '',
     clientName: '',
     architectName: '',
@@ -19,22 +18,25 @@ const Index = () => {
   });
 
   const handleInputChange = (field: string, value: string) => {
-    setProjectData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleStartProject = () => {
-    if (projectData.projectName && projectData.clientName) {
-      localStorage.setItem('projectData', JSON.stringify(projectData));
-      navigate('/planner');
+  const handleStartPlanning = () => {
+    if (!formData.projectName.trim() || !formData.clientName.trim()) {
+      return;
     }
+    
+    localStorage.setItem('projectData', JSON.stringify(formData));
+    localStorage.removeItem('projectRooms');
+    navigate('/planner');
   };
 
-  const isFormValid = projectData.projectName.trim() && projectData.clientName.trim();
+  const isFormValid = formData.projectName.trim() && formData.clientName.trim();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50 flex flex-col">
       {/* Header */}
-      <header className="border-b border-slate-200 bg-white/80 backdrop-blur-sm">
+      <header className="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -42,156 +44,150 @@ const Index = () => {
                 <Building2 className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-slate-900">AutoPlan Pro</h1>
-                <p className="text-sm text-slate-600">Home Automation Planning Suite</p>
+                <h1 className="text-xl font-bold text-slate-900">Home Automation Planner</h1>
+                <p className="text-sm text-slate-600">Professional electrical & appliance planning</p>
               </div>
             </div>
-            <Button variant="outline" size="sm">
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
-            </Button>
+            
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => navigate('/history')}
+                className="hidden sm:flex"
+              >
+                <History className="w-4 h-4 mr-2" />
+                History
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => navigate('/admin')}
+                className="hidden sm:flex"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Admin
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl mb-6">
-            <Lightbulb className="w-8 h-8 text-white" />
+      <div className="flex-grow flex items-center justify-center">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center">
+            <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl">
+              Plan Your Smart Home with Ease
+            </h2>
+            <p className="mt-3 text-slate-600">
+              Start by providing some basic project details to begin planning your home automation setup.
+            </p>
           </div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-4">
-            Simplify Your Home Automation Projects
-          </h1>
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-            Professional planning tool for architects, designers, and electrical consultants. 
-            Create detailed appliance specifications with ease.
-          </p>
-        </div>
 
-        {/* Project Setup Form */}
-        <Card className="shadow-xl border-0 bg-white/70 backdrop-blur-sm">
-          <CardHeader className="text-center pb-2">
-            <CardTitle className="text-2xl text-slate-900">Start New Project</CardTitle>
-            <CardDescription className="text-slate-600">
-              Enter your project details to begin planning
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="projectName" className="text-slate-700 font-medium">
-                  Project Name *
-                </Label>
+          {/* Features */}
+          <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card className="bg-white/70 backdrop-blur-sm shadow-lg border-0">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-teal-100 text-teal-600 rounded-xl mb-4 flex items-center justify-center">
+                  <Users className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">Manage Clients</h3>
+                <p className="text-slate-600">Keep track of your clients and their project requirements efficiently.</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-white/70 backdrop-blur-sm shadow-lg border-0">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl mb-4 flex items-center justify-center">
+                  <Lightbulb className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">Appliance Planning</h3>
+                <p className="text-slate-600">Plan and manage all the appliances and electrical components in your project.</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-white/70 backdrop-blur-sm shadow-lg border-0">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl mb-4 flex items-center justify-center">
+                  <Settings className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">Customizable Settings</h3>
+                <p className="text-slate-600">Customize appliance types, wattage presets, and export formats.</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Form */}
+          <Card className="mt-12 bg-white/70 backdrop-blur-sm shadow-lg border-0">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold text-slate-900">Project Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="projectName">Project Name</Label>
                 <Input
+                  type="text"
                   id="projectName"
-                  placeholder="e.g., Luxury Villa Automation"
-                  value={projectData.projectName}
+                  placeholder="Enter project name"
+                  value={formData.projectName}
                   onChange={(e) => handleInputChange('projectName', e.target.value)}
-                  className="border-slate-300 focus:border-teal-500 focus:ring-teal-500"
                 />
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="clientName" className="text-slate-700 font-medium">
-                  Client Name *
-                </Label>
+              <div>
+                <Label htmlFor="clientName">Client Name</Label>
                 <Input
+                  type="text"
                   id="clientName"
-                  placeholder="e.g., John & Sarah Smith"
-                  value={projectData.clientName}
+                  placeholder="Enter client name"
+                  value={formData.clientName}
                   onChange={(e) => handleInputChange('clientName', e.target.value)}
-                  className="border-slate-300 focus:border-teal-500 focus:ring-teal-500"
                 />
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="architectName" className="text-slate-700 font-medium">
-                  Architect Name
-                </Label>
+              <div>
+                <Label htmlFor="architectName">Architect Name (Optional)</Label>
                 <Input
+                  type="text"
                   id="architectName"
-                  placeholder="e.g., Johnson & Associates"
-                  value={projectData.architectName}
+                  placeholder="Enter architect name"
+                  value={formData.architectName}
                   onChange={(e) => handleInputChange('architectName', e.target.value)}
-                  className="border-slate-300 focus:border-teal-500 focus:ring-teal-500"
                 />
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="designerName" className="text-slate-700 font-medium">
-                  Interior Designer
-                </Label>
+              <div>
+                <Label htmlFor="designerName">Interior Designer (Optional)</Label>
                 <Input
+                  type="text"
                   id="designerName"
-                  placeholder="e.g., Creative Interiors Ltd."
-                  value={projectData.designerName}
+                  placeholder="Enter designer name"
+                  value={formData.designerName}
                   onChange={(e) => handleInputChange('designerName', e.target.value)}
-                  className="border-slate-300 focus:border-teal-500 focus:ring-teal-500"
                 />
               </div>
-            </div>
-            
-            <div className="mt-6 space-y-2">
-              <Label htmlFor="notes" className="text-slate-700 font-medium">
-                Project Notes
-              </Label>
-              <Textarea
-                id="notes"
-                placeholder="Any additional project requirements or specifications..."
-                value={projectData.notes}
-                onChange={(e) => handleInputChange('notes', e.target.value)}
-                className="border-slate-300 focus:border-teal-500 focus:ring-teal-500 min-h-[100px]"
-              />
-            </div>
-            
-            <div className="mt-8 flex justify-center">
+              <div>
+                <Label htmlFor="notes">Project Notes (Optional)</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Enter any project notes"
+                  value={formData.notes}
+                  onChange={(e) => handleInputChange('notes', e.target.value)}
+                />
+              </div>
               <Button
-                onClick={handleStartProject}
+                className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700"
+                onClick={handleStartPlanning}
                 disabled={!isFormValid}
-                size="lg"
-                className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white px-8 py-3 text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200"
               >
-                <FileText className="w-5 h-5 mr-2" />
                 Start Planning
+                <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Features Preview */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="border-0 bg-white/50 backdrop-blur-sm hover:bg-white/70 transition-all duration-200">
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl mx-auto mb-4 flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="font-semibold text-slate-900 mb-2">Room Planning</h3>
-              <p className="text-sm text-slate-600">Organize by rooms and zones with intelligent categorization</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-0 bg-white/50 backdrop-blur-sm hover:bg-white/70 transition-all duration-200">
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl mx-auto mb-4 flex items-center justify-center">
-                <Lightbulb className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="font-semibold text-slate-900 mb-2">Smart Appliances</h3>
-              <p className="text-sm text-slate-600">Comprehensive database with specifications and suggestions</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-0 bg-white/50 backdrop-blur-sm hover:bg-white/70 transition-all duration-200">
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl mx-auto mb-4 flex items-center justify-center">
-                <FileText className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="font-semibold text-slate-900 mb-2">Professional Reports</h3>
-              <p className="text-sm text-slate-600">Generate detailed documentation and specifications</p>
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="border-t border-slate-200 bg-white/80 backdrop-blur-sm py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-slate-500">
+          &copy; {new Date().getFullYear()} Home Automation Planning System. All rights reserved.
+        </div>
+      </footer>
     </div>
   );
 };
