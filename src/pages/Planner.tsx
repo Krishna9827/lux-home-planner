@@ -72,6 +72,18 @@ const Planner = () => {
     setShowAddRoom(false);
   };
 
+  const addRoomsFromTemplate = (template: { name: string; type: string }[]) => {
+    const newRooms: Room[] = template.map((room, index) => ({
+      id: `${Date.now()}-${index}`,
+      name: room.name,
+      type: room.type,
+      appliances: []
+    }));
+    const updatedRooms = [...rooms, ...newRooms];
+    saveRooms(updatedRooms);
+    setShowAddRoom(false);
+  };
+
   const updateRoom = (roomId: string, updatedRoom: Room) => {
     const updatedRooms = rooms.map(room => 
       room.id === roomId ? updatedRoom : room
@@ -209,6 +221,7 @@ const Planner = () => {
         open={showAddRoom}
         onClose={() => setShowAddRoom(false)}
         onAdd={addRoom}
+        onAddTemplate={addRoomsFromTemplate}
       />
 
       <ProjectSummary
