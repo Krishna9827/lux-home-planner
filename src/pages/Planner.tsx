@@ -1,13 +1,13 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Building2, Plus, ChevronRight, Home, Eye } from 'lucide-react';
+import { Building2, Plus, ChevronRight, Home, Eye, Save } from 'lucide-react';
 import RoomCard from '@/components/RoomCard';
 import AddRoomDialog from '@/components/AddRoomDialog';
 import ProjectSummary from '@/components/ProjectSummary';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProjectData {
   projectName: string;
@@ -36,6 +36,7 @@ interface Appliance {
 
 const Planner = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [projectData, setProjectData] = useState<ProjectData | null>(null);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [showAddRoom, setShowAddRoom] = useState(false);
@@ -102,6 +103,38 @@ const Planner = () => {
 
   const getTotalRooms = () => rooms.length;
 
+  const saveProject = () => {
+    if (!projectData) return;
+
+    const projectHistory = JSON.parse(localStorage.getItem('projectHistory') || '[]');
+    const existingProjectIndex = projectHistory.findIndex((p: any) => 
+      p.projectName === projectData.projectName && p.clientName === projectData.clientName
+    );
+
+    const savedProject = {
+      id: existingProjectIndex >= 0 ? projectHistory[existingProjectIndex].id : Date.now().toString(),
+      ...projectData,
+      rooms,
+      createdAt: existingProjectIndex >= 0 ? projectHistory[existingProjectIndex].createdAt : new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    if (existingProjectIndex >= 0) {
+      // Update existing project
+      projectHistory[existingProjectIndex] = savedProject;
+    } else {
+      // Add new project
+      projectHistory.unshift(savedProject);
+    }
+
+    localStorage.setItem('projectHistory', JSON.stringify(projectHistory));
+    
+    toast({
+      title: "Project Saved",
+      description: "Your project has been saved successfully and can be accessed from the history page."
+    });
+  };
+
   if (!projectData) {
     return <div>Loading...</div>;
   }
@@ -136,6 +169,15 @@ const Planner = () => {
                   {getTotalAppliances()} Items
                 </Badge>
               </div>
+              
+              <Button
+                variant="outline"
+                onClick={saveProject}
+                className="hidden sm:flex border-green-200 text-green-700 hover:bg-green-50"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Save
+              </Button>
               
               <Button
                 variant="outline"
@@ -199,6 +241,20 @@ const Planner = () => {
                 onDelete={deleteRoom}
               />
             ))}
+          </div>
+        )}
+        
+        {/* Mobile Save Button */}
+        {rooms.length > 0 && (
+          <div className="sm:hidden fixed bottom-20 right-6">
+            <Button
+              onClick={saveProject}
+              size="lg"
+              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg rounded-full"
+            >
+              <Save className="w-5 h-5 mr-2" />
+              Save
+            </Button>
           </div>
         )}
         
