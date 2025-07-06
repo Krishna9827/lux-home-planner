@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Building2, Plus, Trash2, Save, ArrowLeft } from 'lucide-react';
+import { Building2, Plus, Trash2, Save, ArrowLeft, Package } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import InventoryManagement from '@/components/InventoryManagement';
 
 interface DefaultSettings {
   applianceCategories: string[];
@@ -18,6 +18,7 @@ interface DefaultSettings {
 const AdminSettings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState('general');
   const [settings, setSettings] = useState<DefaultSettings>({
     applianceCategories: ['Lights', 'Fans', 'HVAC', 'Smart Devices', 'Curtain & Blinds', 'Security'],
     wattagePresets: [3, 6, 9, 12, 15, 18, 24, 36, 50, 100],
@@ -108,91 +109,116 @@ const AdminSettings = () => {
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Appliance Categories */}
-        <Card className="border-slate-200">
-          <CardHeader>
-            <CardTitle className="text-lg text-slate-800">Default Appliance Categories</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {settings.applianceCategories.map((category) => (
-                <Badge
-                  key={category}
-                  variant="outline"
-                  className="bg-white hover:bg-red-50 group cursor-pointer"
-                  onClick={() => removeCategory(category)}
-                >
-                  {category}
-                  <Trash2 className="w-3 h-3 ml-2 opacity-0 group-hover:opacity-100 text-red-500" />
-                </Badge>
-              ))}
-            </div>
-            
-            <div className="flex space-x-2">
-              <Input
-                placeholder="Enter new category"
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && addCategory()}
-              />
-              <Button onClick={addCategory} variant="outline">
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Tab Navigation */}
+        <div className="flex space-x-1 mb-8 bg-white p-1 rounded-lg border border-slate-200">
+          <Button
+            variant={activeTab === 'general' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('general')}
+            className="flex-1"
+          >
+            General Settings
+          </Button>
+          <Button
+            variant={activeTab === 'inventory' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('inventory')}
+            className="flex-1"
+          >
+            <Package className="w-4 h-4 mr-2" />
+            Inventory Management
+          </Button>
+        </div>
 
-        {/* Wattage Presets */}
-        <Card className="border-slate-200">
-          <CardHeader>
-            <CardTitle className="text-lg text-slate-800">Default Wattage Presets</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {settings.wattagePresets.map((wattage) => (
-                <Badge
-                  key={wattage}
-                  variant="outline"
-                  className="bg-white hover:bg-red-50 group cursor-pointer"
-                  onClick={() => removeWattage(wattage)}
-                >
-                  {wattage}W
-                  <Trash2 className="w-3 h-3 ml-2 opacity-0 group-hover:opacity-100 text-red-500" />
-                </Badge>
-              ))}
-            </div>
-            
-            <div className="flex space-x-2">
-              <Input
-                type="number"
-                placeholder="Enter wattage"
-                value={newWattage}
-                onChange={(e) => setNewWattage(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && addWattage()}
-              />
-              <Button onClick={addWattage} variant="outline">
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {activeTab === 'general' ? (
+          <div className="space-y-8">
+            {/* Appliance Categories */}
+            <Card className="border-slate-200">
+              <CardHeader>
+                <CardTitle className="text-lg text-slate-800">Default Appliance Categories</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {settings.applianceCategories.map((category) => (
+                    <Badge
+                      key={category}
+                      variant="outline"
+                      className="bg-white hover:bg-red-50 group cursor-pointer"
+                      onClick={() => removeCategory(category)}
+                    >
+                      {category}
+                      <Trash2 className="w-3 h-3 ml-2 opacity-0 group-hover:opacity-100 text-red-500" />
+                    </Badge>
+                  ))}
+                </div>
+                
+                <div className="flex space-x-2">
+                  <Input
+                    placeholder="Enter new category"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && addCategory()}
+                  />
+                  <Button onClick={addCategory} variant="outline">
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Export Formats */}
-        <Card className="border-slate-200">
-          <CardHeader>
-            <CardTitle className="text-lg text-slate-800">Export Formats</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {settings.exportFormats.map((format) => (
-                <Badge key={format} variant="outline" className="bg-white">
-                  {format}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+            {/* Wattage Presets */}
+            <Card className="border-slate-200">
+              <CardHeader>
+                <CardTitle className="text-lg text-slate-800">Default Wattage Presets</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {settings.wattagePresets.map((wattage) => (
+                    <Badge
+                      key={wattage}
+                      variant="outline"
+                      className="bg-white hover:bg-red-50 group cursor-pointer"
+                      onClick={() => removeWattage(wattage)}
+                    >
+                      {wattage}W
+                      <Trash2 className="w-3 h-3 ml-2 opacity-0 group-hover:opacity-100 text-red-500" />
+                    </Badge>
+                  ))}
+                </div>
+                
+                <div className="flex space-x-2">
+                  <Input
+                    type="number"
+                    placeholder="Enter wattage"
+                    value={newWattage}
+                    onChange={(e) => setNewWattage(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && addWattage()}
+                  />
+                  <Button onClick={addWattage} variant="outline">
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Export Formats */}
+            <Card className="border-slate-200">
+              <CardHeader>
+                <CardTitle className="text-lg text-slate-800">Export Formats</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {settings.exportFormats.map((format) => (
+                    <Badge key={format} variant="outline" className="bg-white">
+                      {format}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          <InventoryManagement />
+        )}
       </div>
     </div>
   );
