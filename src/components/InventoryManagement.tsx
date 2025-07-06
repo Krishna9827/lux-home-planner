@@ -101,12 +101,19 @@ const InventoryManagement = () => {
     });
   };
 
-  const handleUpdateItem = (id: string, field: string, value: string | number) => {
-    const updatedData = priceData.map(item => 
-      item.id === id 
-        ? { ...item, [field]: field === 'pricePerUnit' || field === 'wattage' ? parseFloat(value.toString()) || undefined : value }
-        : item
-    );
+  const handleUpdateItem = (id: string, field: string, value: string) => {
+    const updatedData = priceData.map(item => {
+      if (item.id === id) {
+        if (field === 'pricePerUnit') {
+          return { ...item, [field]: parseFloat(value) || 0 };
+        } else if (field === 'wattage') {
+          return { ...item, [field]: value ? parseInt(value) : undefined };
+        } else {
+          return { ...item, [field]: value };
+        }
+      }
+      return item;
+    });
     savePriceData(updatedData);
   };
 
@@ -260,7 +267,7 @@ const InventoryManagement = () => {
                     {editingId === item.id ? (
                       <Input
                         type="number"
-                        value={item.wattage || ''}
+                        value={item.wattage?.toString() || ''}
                         onChange={(e) => handleUpdateItem(item.id, 'wattage', e.target.value)}
                         size="sm"
                       />
@@ -272,7 +279,7 @@ const InventoryManagement = () => {
                     {editingId === item.id ? (
                       <Input
                         type="number"
-                        value={item.pricePerUnit}
+                        value={item.pricePerUnit.toString()}
                         onChange={(e) => handleUpdateItem(item.id, 'pricePerUnit', e.target.value)}
                         size="sm"
                       />
