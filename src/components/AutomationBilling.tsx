@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Toggle } from '@/components/ui/toggle';
-import { Download, Calculator, Zap, Wifi, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Download, Calculator, Zap, Wifi, AlertTriangle, CheckCircle2, Plus } from 'lucide-react';
 import { generateAutomationBillingPDF } from '@/utils/automationBillingPdfExport';
 import { useToast } from '@/hooks/use-toast';
 
@@ -53,6 +53,7 @@ const AutomationBilling = ({ projectData, rooms, onClose }: AutomationBillingPro
   const { toast } = useToast();
   const [automationType, setAutomationType] = useState<'wired' | 'wireless'>('wireless');
   const [knxWireLength, setKnxWireLength] = useState<number>(0);
+  const [additionalOnOffPoints, setAdditionalOnOffPoints] = useState<number>(0);
   const [priceData, setPriceData] = useState<any[]>([]);
 
   // Wired automation modules
@@ -109,22 +110,36 @@ const AutomationBilling = ({ projectData, rooms, onClose }: AutomationBillingPro
   };
 
   const calculateWiredCost = () => {
-    // Calculate total ON/OFF points and lighting channels
-    let totalOnOffPoints = 0;
+    // Calculate total ON/OFF points and lighting channels with enhanced logic
+    let totalOnOffLights = 0;
     let totalLightingChannels = 0;
+    let totalCurtains = 0;
 
     rooms.forEach(room => {
       room.appliances.forEach(appliance => {
-        if (appliance.category === 'Fans' || appliance.category === 'HVAC' || appliance.category === 'Curtain & Blinds') {
-          totalOnOffPoints += appliance.quantity;
-        } else if (appliance.category === 'Lights') {
-          totalLightingChannels += appliance.quantity;
+        if (appliance.category === 'Lights') {
+          // Check if it's basic ON/OFF lighting or advanced lighting
+          const isBasicOnOff = appliance.subcategory === 'Basic ON/OFF' || 
+                              !appliance.subcategory || 
+                              appliance.subcategory.toLowerCase().includes('on/off');
+          
+          if (isBasicOnOff) {
+            totalOnOffLights += appliance.quantity;
+          } else {
+            totalLightingChannels += appliance.quantity;
+          }
+        } else if (appliance.category === 'Curtain & Blinds') {
+          totalCurtains += appliance.quantity;
         }
       });
     });
 
-    // Optimize ON/OFF actuators
-    const onOffOptimization = optimizeOnOffActuators(totalOnOffPoints);
+    // Calculate total actuator channels needed
+    const curtainChannels = totalCurtains * 2; // Each curtain uses 2 channels
+    const totalActuatorChannels = totalOnOffLights + curtainChannels + additionalOnOffPoints;
+
+    // Optimize actuators
+    const actuatorOptimization = optimizeActuators(totalActuatorChannels);
     
     // Optimize lighting modules
     const lightingOptimization = optimizeLightingModules(totalLightingChannels);
@@ -140,47 +155,59 @@ const AutomationBilling = ({ projectData, rooms, onClose }: AutomationBillingPro
     const wiringCost = knxWireLength * wiredModules.knxWiring.price;
 
     const totalCost = 
-      onOffOptimization.totalCost + 
+      actuatorOptimization.totalCost + 
       lightingOptimization.totalCost + 
       mandatoryComponents.reduce((sum, comp) => sum + (comp.price * comp.quantity), 0) +
       wiringCost;
 
     return {
       totalCost,
-      onOffOptimization,
+      actuatorOptimization,
       lightingOptimization,
       mandatoryComponents,
       wiringCost,
-      totalOnOffPoints,
-      totalLightingChannels
+      totalActuatorChannels,
+      totalLightingChannels,
+      breakdown: {
+        onOffLights: totalOnOffLights,
+        curtains: totalCurtains,
+        curtainChannels,
+        additionalOnOffPoints
+      }
     };
   };
 
-  const optimizeOnOffActuators = (totalPoints: number) => {
-    if (totalPoints === 0) return { modules: [], totalCost: 0, recommendation: '' };
+  const optimizeActuators = (totalChannels: number) => {
+    if (totalChannels === 0) return { modules: [], totalCost: 0, recommendation: '', calculation: '' };
 
     const modules = [];
-    let remainingPoints = totalPoints;
     let totalCost = 0;
 
-    // Calculate cost with 16-channel modules first
-    const modules16Only = Math.ceil(totalPoints / 16);
+    // Calculate cost with 16-channel modules only
+    const modules16Only = Math.ceil(totalChannels / 16);
     const cost16Only = modules16Only * wiredModules.onOffActuator16.price;
 
-    // Calculate mixed approach
-    const modules16Mixed = Math.floor(totalPoints / 16);
-    const remaining8 = totalPoints % 16;
+    // Calculate mixed approach (16-channel + 8-channel)
+    const modules16Mixed = Math.floor(totalChannels / 16);
+    const remaining8 = totalChannels % 16;
     const modules8Mixed = remaining8 > 0 ? Math.ceil(remaining8 / 8) : 0;
     const costMixed = (modules16Mixed * wiredModules.onOffActuator16.price) + (modules8Mixed * wiredModules.onOffActuator8.price);
 
+    // Calculate cost with 8-channel modules only
+    const modules8Only = Math.ceil(totalChannels / 8);
+    const cost8Only = modules8Only * wiredModules.onOffActuator8.price;
+
     let recommendation = '';
+    let calculation = '';
     
-    if (cost16Only <= costMixed) {
+    // Choose the most cost-effective option
+    if (cost16Only <= costMixed && cost16Only <= cost8Only) {
       // Use 16-channel modules only
       modules.push({ ...wiredModules.onOffActuator16, quantity: modules16Only });
       totalCost = cost16Only;
-      recommendation = `Optimized: ${modules16Only} x 16Ch modules for best value`;
-    } else {
+      recommendation = `Optimized: ${modules16Only} × 16Ch modules for best value`;
+      calculation = `${totalChannels} channels ÷ 16 = ${modules16Only} modules @ ₹${wiredModules.onOffActuator16.price.toLocaleString()} each`;
+    } else if (costMixed <= cost8Only) {
       // Use mixed approach
       if (modules16Mixed > 0) {
         modules.push({ ...wiredModules.onOffActuator16, quantity: modules16Mixed });
@@ -189,10 +216,17 @@ const AutomationBilling = ({ projectData, rooms, onClose }: AutomationBillingPro
         modules.push({ ...wiredModules.onOffActuator8, quantity: modules8Mixed });
       }
       totalCost = costMixed;
-      recommendation = `Optimized: ${modules16Mixed} x 16Ch + ${modules8Mixed} x 8Ch modules`;
+      recommendation = `Optimized: ${modules16Mixed} × 16Ch + ${modules8Mixed} × 8Ch modules`;
+      calculation = `${totalChannels} channels = ${modules16Mixed * 16} (16Ch) + ${remaining8} (8Ch) channels`;
+    } else {
+      // Use 8-channel modules only
+      modules.push({ ...wiredModules.onOffActuator8, quantity: modules8Only });
+      totalCost = cost8Only;
+      recommendation = `Optimized: ${modules8Only} × 8Ch modules for best value`;
+      calculation = `${totalChannels} channels ÷ 8 = ${modules8Only} modules @ ₹${wiredModules.onOffActuator8.price.toLocaleString()} each`;
     }
 
-    return { modules, totalCost, recommendation };
+    return { modules, totalCost, recommendation, calculation };
   };
 
   const optimizeLightingModules = (totalChannels: number) => {
@@ -217,7 +251,7 @@ const AutomationBilling = ({ projectData, rooms, onClose }: AutomationBillingPro
       // Use 128-channel modules only
       modules.push({ ...wiredModules.lightingModule128, quantity: modules128Only });
       totalCost = cost128Only;
-      recommendation = `Optimized: ${modules128Only} x 128Ch modules for best value`;
+      recommendation = `Optimized: ${modules128Only} × 128Ch modules for best value`;
     } else {
       // Use mixed approach
       if (modules128Mixed > 0) {
@@ -227,7 +261,7 @@ const AutomationBilling = ({ projectData, rooms, onClose }: AutomationBillingPro
         modules.push({ ...wiredModules.lightingModule64, quantity: modules64Mixed });
       }
       totalCost = costMixed;
-      recommendation = `Optimized: ${modules128Mixed} x 128Ch + ${modules64Mixed} x 64Ch modules`;
+      recommendation = `Optimized: ${modules128Mixed} × 128Ch + ${modules64Mixed} × 64Ch modules`;
     }
 
     return { modules, totalCost, recommendation };
@@ -293,30 +327,46 @@ const AutomationBilling = ({ projectData, rooms, onClose }: AutomationBillingPro
         </CardContent>
       </Card>
 
-      {/* KNX Wire Length Input for Wired */}
+      {/* Wired Automation Configuration */}
       {automationType === 'wired' && (
-        <Card className="border-slate-200">
-          <CardHeader>
-            <CardTitle className="text-lg text-slate-800">KNX Wiring Requirements</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center space-x-4">
-              <div className="flex-1">
-                <Label htmlFor="wireLength">Total KNX Wire Length (meters)</Label>
-                <Input
-                  id="wireLength"
-                  type="number"
-                  value={knxWireLength}
-                  onChange={(e) => setKnxWireLength(Number(e.target.value))}
-                  placeholder="Enter total wire length"
-                />
+        <div className="space-y-4">
+          {/* Additional ON/OFF Points Input */}
+          <Card className="border-slate-200">
+            <CardHeader>
+              <CardTitle className="text-lg text-slate-800">Additional Configuration</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="additionalPoints">Additional ON/OFF Switches/Points</Label>
+                  <Input
+                    id="additionalPoints"
+                    type="number"
+                    value={additionalOnOffPoints}
+                    onChange={(e) => setAdditionalOnOffPoints(Number(e.target.value))}
+                    placeholder="e.g., sockets, non-lighting electrical points"
+                  />
+                  <p className="text-sm text-slate-600 mt-1">
+                    Generic ON/OFF points like sockets, switches, etc.
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="wireLength">Total KNX Wire Length (meters)</Label>
+                  <Input
+                    id="wireLength"
+                    type="number"
+                    value={knxWireLength}
+                    onChange={(e) => setKnxWireLength(Number(e.target.value))}
+                    placeholder="Enter total wire length"
+                  />
+                  <p className="text-sm text-slate-600 mt-1">
+                    Cost: ₹{(knxWireLength * 80).toLocaleString()} @ ₹80/meter
+                  </p>
+                </div>
               </div>
-              <div className="text-sm text-slate-600">
-                Cost: ₹{(knxWireLength * 80).toLocaleString()} @ ₹80/meter
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Cost Summary */}
@@ -356,34 +406,53 @@ const AutomationBilling = ({ projectData, rooms, onClose }: AutomationBillingPro
         </Card>
       ) : (
         <div className="space-y-4">
-          {/* System Requirements */}
+          {/* Actuator Requirements Breakdown */}
           <Card className="border-slate-200">
             <CardHeader>
-              <CardTitle className="text-lg text-slate-800">System Requirements</CardTitle>
+              <CardTitle className="text-lg text-slate-800">Actuator Channel Requirements</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-700">{wiredResult.totalOnOffPoints}</div>
-                  <div className="text-sm text-blue-600">ON/OFF Points</div>
-                </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                  <div className="text-2xl font-bold text-yellow-700">{wiredResult.totalLightingChannels}</div>
-                  <div className="text-sm text-yellow-600">Lighting Channels</div>
+                  <div className="text-2xl font-bold text-yellow-700">{wiredResult.breakdown.onOffLights}</div>
+                  <div className="text-sm text-yellow-600">ON/OFF Lights</div>
                 </div>
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <div className="text-2xl font-bold text-green-700">{wiredResult.breakdown.curtains}</div>
+                  <div className="text-sm text-green-600">Curtains</div>
+                  <div className="text-xs text-green-500">({wiredResult.breakdown.curtainChannels} channels)</div>
+                </div>
+                <div className="text-center p-4 bg-purple-50 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-700">{additionalOnOffPoints}</div>
+                  <div className="text-sm text-purple-600">Additional Points</div>
+                </div>
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-700">{wiredResult.totalActuatorChannels}</div>
+                  <div className="text-sm text-blue-600">Total Channels</div>
+                </div>
+              </div>
+              
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-blue-800 mb-2">Channel Calculation:</h4>
+                <p className="text-sm text-blue-700">
+                  {wiredResult.breakdown.onOffLights} ON/OFF Lights + 
+                  {wiredResult.breakdown.curtains} Curtains × 2 channels + 
+                  {additionalOnOffPoints} Additional Points = 
+                  <span className="font-bold"> {wiredResult.totalActuatorChannels} Total Channels</span>
+                </p>
               </div>
             </CardContent>
           </Card>
 
-          {/* ON/OFF Actuators */}
-          {wiredResult.onOffOptimization.modules.length > 0 && (
+          {/* Optimized Actuators */}
+          {wiredResult.actuatorOptimization.modules.length > 0 && (
             <Card className="border-slate-200">
               <CardHeader>
-                <CardTitle className="text-lg text-slate-800">ON/OFF Actuators</CardTitle>
+                <CardTitle className="text-lg text-slate-800">Optimized Actuator Configuration</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {wiredResult.onOffOptimization.modules.map((module, index) => (
+                  {wiredResult.actuatorOptimization.modules.map((module, index) => (
                     <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                       <div>
                         <div className="font-medium text-slate-900">{module.name}</div>
@@ -395,9 +464,14 @@ const AutomationBilling = ({ projectData, rooms, onClose }: AutomationBillingPro
                       </div>
                     </div>
                   ))}
-                  <div className="flex items-center space-x-2 p-2 bg-green-50 rounded">
-                    <CheckCircle2 className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-green-700">{wiredResult.onOffOptimization.recommendation}</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2 p-2 bg-green-50 rounded">
+                      <CheckCircle2 className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-green-700">{wiredResult.actuatorOptimization.recommendation}</span>
+                    </div>
+                    <div className="text-xs text-slate-600 p-2 bg-slate-50 rounded">
+                      Calculation: {wiredResult.actuatorOptimization.calculation}
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -408,10 +482,16 @@ const AutomationBilling = ({ projectData, rooms, onClose }: AutomationBillingPro
           {wiredResult.lightingOptimization.modules.length > 0 && (
             <Card className="border-slate-200">
               <CardHeader>
-                <CardTitle className="text-lg text-slate-800">Lighting Modules</CardTitle>
+                <CardTitle className="text-lg text-slate-800">Advanced Lighting Modules</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
+                  <div className="text-center p-3 bg-yellow-50 rounded-lg mb-3">
+                    <div className="text-xl font-bold text-yellow-700">{wiredResult.totalLightingChannels}</div>
+                    <div className="text-sm text-yellow-600">Advanced Lighting Channels</div>
+                    <div className="text-xs text-yellow-500">(RGB, RGBW, Tunable lights)</div>
+                  </div>
+                  
                   {wiredResult.lightingOptimization.modules.map((module, index) => (
                     <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                       <div>
@@ -436,7 +516,7 @@ const AutomationBilling = ({ projectData, rooms, onClose }: AutomationBillingPro
           {/* Mandatory Components */}
           <Card className="border-slate-200">
             <CardHeader>
-              <CardTitle className="text-lg text-slate-800">Mandatory Components</CardTitle>
+              <CardTitle className="text-lg text-slate-800">Mandatory System Components</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -468,7 +548,7 @@ const AutomationBilling = ({ projectData, rooms, onClose }: AutomationBillingPro
         </div>
       )}
 
-      {/* Disclaimer */}
+      {/* Enhanced Disclaimer */}
       <Card className="border-orange-200 bg-orange-50">
         <CardContent className="p-4">
           <div className="flex items-start space-x-3">
@@ -476,9 +556,9 @@ const AutomationBilling = ({ projectData, rooms, onClose }: AutomationBillingPro
             <div>
               <p className="text-sm text-orange-800 font-medium">Important Disclaimer</p>
               <p className="text-sm text-orange-700 mt-1">
-                This is a preliminary estimate. Final quotation may vary based on site conditions, 
+                This is a preliminary estimate with optimized cost calculations. Final quotation may vary based on site conditions, 
                 customization requirements, and current market rates. {automationType === 'wired' && 
-                'Wired automation pricing includes optimized module selection for cost efficiency.'}
+                'Wired automation uses intelligent channel optimization: Curtains require 2 actuator channels each, and the system automatically selects the most cost-effective actuator combination.'}
               </p>
             </div>
           </div>
