@@ -109,7 +109,7 @@ const InventoryManagement = () => {
         } else if (field === 'wattage') {
           return { ...item, [field]: value ? parseInt(value) : undefined };
         } else {
-          return { ...item, [field]: value };
+          return { ...item, [field]: value || undefined };
         }
       }
       return item;
