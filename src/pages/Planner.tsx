@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Building2, Plus, ChevronRight, Home, Eye, Save, Calculator, X } from 'lucide-react';
+import { Building2, Plus, ChevronRight, Home, Eye, Save, Calculator, X, Zap } from 'lucide-react';
 import RoomCard from '@/components/RoomCard';
 import AddRoomDialog from '@/components/AddRoomDialog';
 import ProjectSummary from '@/components/ProjectSummary';
 import EstimatedCost from '@/components/EstimatedCost';
+import AutomationBilling from '@/components/AutomationBilling';
 import { useToast } from '@/hooks/use-toast';
 
 interface ProjectData {
@@ -43,6 +44,7 @@ const Planner = () => {
   const [showAddRoom, setShowAddRoom] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [showCostEstimate, setShowCostEstimate] = useState(false);
+  const [showAutomationBilling, setShowAutomationBilling] = useState(false);
 
   useEffect(() => {
     const savedProject = localStorage.getItem('projectData');
@@ -183,6 +185,15 @@ const Planner = () => {
               
               <Button
                 variant="outline"
+                onClick={() => setShowAutomationBilling(true)}
+                className="hidden sm:flex border-purple-200 text-purple-700 hover:bg-purple-50"
+              >
+                <Zap className="w-4 h-4 mr-2" />
+                Automation Billing
+              </Button>
+              
+              <Button
+                variant="outline"
                 onClick={() => setShowCostEstimate(true)}
                 className="hidden sm:flex border-teal-200 text-teal-700 hover:bg-teal-50"
               >
@@ -255,46 +266,53 @@ const Planner = () => {
           </div>
         )}
         
-        {/* Mobile Save Button */}
+        {/* Mobile Buttons */}
         {rooms.length > 0 && (
-          <div className="sm:hidden fixed bottom-32 right-6">
-            <Button
-              onClick={saveProject}
-              size="lg"
-              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg rounded-full"
-            >
-              <Save className="w-5 h-5 mr-2" />
-              Save
-            </Button>
-          </div>
-        )}
-        
-        {/* Mobile Cost Estimate Button */}
-        {rooms.length > 0 && (
-          <div className="sm:hidden fixed bottom-20 right-6">
-            <Button
-              onClick={() => setShowCostEstimate(true)}
-              size="lg"
-              className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-lg rounded-full"
-            >
-              <Calculator className="w-5 h-5 mr-2" />
-              Cost
-            </Button>
-          </div>
-        )}
-        
-        {/* Mobile Summary Button */}
-        {rooms.length > 0 && (
-          <div className="sm:hidden fixed bottom-6 right-6">
-            <Button
-              onClick={() => setShowSummary(true)}
-              size="lg"
-              className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 shadow-lg rounded-full"
-            >
-              <Eye className="w-5 h-5 mr-2" />
-              Summary
-            </Button>
-          </div>
+          <>
+            <div className="sm:hidden fixed bottom-44 right-6">
+              <Button
+                onClick={saveProject}
+                size="lg"
+                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg rounded-full"
+              >
+                <Save className="w-5 h-5 mr-2" />
+                Save
+              </Button>
+            </div>
+            
+            <div className="sm:hidden fixed bottom-32 right-6">
+              <Button
+                onClick={() => setShowAutomationBilling(true)}
+                size="lg"
+                className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-lg rounded-full"
+              >
+                <Zap className="w-5 h-5 mr-2" />
+                Billing
+              </Button>
+            </div>
+            
+            <div className="sm:hidden fixed bottom-20 right-6">
+              <Button
+                onClick={() => setShowCostEstimate(true)}
+                size="lg"
+                className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 shadow-lg rounded-full"
+              >
+                <Calculator className="w-5 h-5 mr-2" />
+                Cost
+              </Button>
+            </div>
+            
+            <div className="sm:hidden fixed bottom-6 right-6">
+              <Button
+                onClick={() => setShowSummary(true)}
+                size="lg"
+                className="bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700 shadow-lg rounded-full"
+              >
+                <Eye className="w-5 h-5 mr-2" />
+                Summary
+              </Button>
+            </div>
+          </>
         )}
       </div>
 
@@ -330,6 +348,30 @@ const Planner = () => {
                 projectData={projectData}
                 rooms={rooms}
                 onClose={() => setShowCostEstimate(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAutomationBilling && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-slate-900">Automation Billing</h2>
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowAutomationBilling(false)}
+                  className="p-2"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+              <AutomationBilling
+                projectData={projectData}
+                rooms={rooms}
+                onClose={() => setShowAutomationBilling(false)}
               />
             </div>
           </div>
