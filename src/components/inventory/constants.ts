@@ -17,10 +17,10 @@ export const getCategoryColor = (category: string) => {
 };
 
 export const defaultPrices = [
-  { id: '1', category: 'Lights', subcategory: 'Basic ON/OFF', wattage: 6, pricePerUnit: 150 },
-  { id: '2', category: 'Lights', subcategory: 'Tunable', wattage: 9, pricePerUnit: 250 },
-  { id: '3', category: 'Lights', subcategory: 'RGB', wattage: 12, pricePerUnit: 350 },
-  { id: '4', category: 'Lights', subcategory: 'RGBW', wattage: 15, pricePerUnit: 450 },
+  { id: '1', category: 'Lights', subcategory: 'Basic ON/OFF', wattage: 6, pricePerUnit: 150, notes: 'Actuator based' },
+  { id: '2', category: 'Lights', subcategory: 'Tunable', wattage: 9, pricePerUnit: 250, notes: 'Dali based' },
+  { id: '3', category: 'Lights', subcategory: 'RGB', wattage: 12, pricePerUnit: 350, notes: 'Dali based' },
+  { id: '4', category: 'Lights', subcategory: 'RGBW', wattage: 15, pricePerUnit: 450, notes: 'Dali based' },
   { id: '5', category: 'Fans', pricePerUnit: 2000, notes: 'Ceiling fan' },
   { id: '6', category: 'HVAC', pricePerUnit: 35000, notes: 'Standard AC unit' },
   { id: '7', category: 'Curtain & Blinds', pricePerUnit: 7000, notes: 'Smart Wi-Fi motor' },

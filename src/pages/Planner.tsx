@@ -43,7 +43,6 @@ const Planner = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [showAddRoom, setShowAddRoom] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
-  const [showCostEstimate, setShowCostEstimate] = useState(false);
   const [showAutomationBilling, setShowAutomationBilling] = useState(false);
 
   useEffect(() => {
@@ -194,15 +193,6 @@ const Planner = () => {
               
               <Button
                 variant="outline"
-                onClick={() => setShowCostEstimate(true)}
-                className="hidden sm:flex border-teal-200 text-teal-700 hover:bg-teal-50"
-              >
-                <Calculator className="w-4 h-4 mr-2" />
-                Cost Estimate
-              </Button>
-              
-              <Button
-                variant="outline"
                 onClick={() => setShowSummary(true)}
                 className="hidden sm:flex"
               >
@@ -269,7 +259,7 @@ const Planner = () => {
         {/* Mobile Buttons */}
         {rooms.length > 0 && (
           <>
-            <div className="sm:hidden fixed bottom-44 right-6">
+            <div className="sm:hidden fixed bottom-32 right-6">
               <Button
                 onClick={saveProject}
                 size="lg"
@@ -280,7 +270,7 @@ const Planner = () => {
               </Button>
             </div>
             
-            <div className="sm:hidden fixed bottom-32 right-6">
+            <div className="sm:hidden fixed bottom-20 right-6">
               <Button
                 onClick={() => setShowAutomationBilling(true)}
                 size="lg"
@@ -288,17 +278,6 @@ const Planner = () => {
               >
                 <Zap className="w-5 h-5 mr-2" />
                 Billing
-              </Button>
-            </div>
-            
-            <div className="sm:hidden fixed bottom-20 right-6">
-              <Button
-                onClick={() => setShowCostEstimate(true)}
-                size="lg"
-                className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 shadow-lg rounded-full"
-              >
-                <Calculator className="w-5 h-5 mr-2" />
-                Cost
               </Button>
             </div>
             
@@ -329,30 +308,6 @@ const Planner = () => {
         projectData={projectData}
         rooms={rooms}
       />
-
-      {showCostEstimate && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-slate-900">Project Cost Estimate</h2>
-                <Button
-                  variant="ghost"
-                  onClick={() => setShowCostEstimate(false)}
-                  className="p-2"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-              <EstimatedCost
-                projectData={projectData}
-                rooms={rooms}
-                onClose={() => setShowCostEstimate(false)}
-              />
-            </div>
-          </div>
-        </div>
-      )}
 
       {showAutomationBilling && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">

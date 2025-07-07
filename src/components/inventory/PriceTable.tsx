@@ -50,7 +50,16 @@ export const PriceTable = ({
                   size="sm"
                 />
               ) : (
-                item.subcategory || '-'
+                <div>
+                  {item.subcategory || '-'}
+                  {item.category === 'Lights' && item.subcategory && (
+                    <div className="text-xs text-slate-500 mt-1">
+                      {item.subcategory.toLowerCase().includes('on/off') || item.subcategory.toLowerCase().includes('basic') 
+                        ? '(Actuator)' 
+                        : '(Dali)'}
+                    </div>
+                  )}
+                </div>
               )}
             </TableCell>
             <TableCell>
