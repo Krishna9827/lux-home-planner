@@ -57,7 +57,7 @@ const InventoryManagement = () => {
       setPriceData(defaultPrices);
       localStorage.setItem('inventoryPrices', JSON.stringify(defaultPrices));
     }
-  }, [navigate]);
+  }, []);
 
   const savePriceData = (data: PriceData[]) => {
     setPriceData(data);
